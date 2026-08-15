@@ -7,6 +7,13 @@ enum AppLauncher {
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
 
+    /// Opens a link in one specific app, bypassing whichever handler Launch Services would pick.
+    @MainActor
+    static func open(_ url: URL, in application: URL) {
+        NSWorkspace.shared.open(
+            [url], withApplicationAt: application, configuration: NSWorkspace.OpenConfiguration())
+    }
+
     @MainActor
     static func showInFinder(_ url: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([url])

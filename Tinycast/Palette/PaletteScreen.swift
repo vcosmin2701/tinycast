@@ -51,6 +51,9 @@ struct PaletteHeaderAccessory {
     /// The first field that still has to be filled before ↵ can act, if any.
     let firstIncompleteField: String?
     let view: AnyView
+    /// Collapses the query out of sight while the strip is being typed into: the row it named
+    /// is already selected, so the text is only in the way. The field itself never moves.
+    var hidesQuery = false
 
     /// Tab order: the next field, or nil once focus belongs back in the search field.
     func fieldAfter(_ current: String?) -> String? {

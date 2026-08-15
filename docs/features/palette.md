@@ -62,9 +62,11 @@ palette indexes into it. Adding a mode means adding a conformer, not a branch in
 | `.extensionCommand` | `ExtensionCommandScreen` | `ExtensionCommandView` (see [extensions.md](extensions.md)) |
 
 Every mode but `.launcher` is a sub-screen that backs out to the launcher. **Tab cycles launcher ↔
-clipboard and nothing else** unless the selected row declares arguments, in which case it walks those
-fields first (see below); the rest are reached by a command or a global hotkey, and Uninstall only
-from a launcher app's Actions menu, scoped to that app.
+clipboard and nothing else** unless the selected row offers header fields — declared arguments, or the
+web-search chip a browser row grows once a query is typed
+([launcher.md](launcher.md#search-the-web-from-an-app-row)) — in which case it walks those fields
+first (see below); the rest are reached by a command or a global hotkey, and Uninstall only from a
+launcher app's Actions menu, scoped to that app.
 
 The argument screen is the one mode where the search field is not a search field: it _is_ the current
 argument's input, so its placeholder names that argument and ↵ submits rather than activating a row.
@@ -81,7 +83,9 @@ invariants:
 - The search field sits at **one structural position, always**. It is never moved inside an `if`:
   flipping the branch tears down its field editor, which drops first responder mid-navigation. Only
   its *width* changes — it shrinks to the width of the typed text so the argument chips sit right
-  after it, as they do in Raycast.
+  after it, as they do in Raycast. An accessory setting `hidesQuery` collapses it to zero instead,
+  which is how the web-search chip hides the app name once Tab has already resolved it; the query
+  itself is untouched, since it is still what selects the row being acted on.
 - Argument focus is its own `@FocusState`, `argumentFocused`, keyed by argument name. Moving the
   selection hands focus back to the search field first, because the row that owned those fields is
   about to stop being selected. ↵ on a blank required argument focuses it instead of launching.

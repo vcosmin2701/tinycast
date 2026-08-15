@@ -101,6 +101,34 @@ final class LauncherCoordinator {
         }
     }
 
+    /// ↵ from a browser row's search chip: the query goes to the configured engine, opened in
+    /// that browser rather than the default one.
+    func searchWeb(_ typed: String, in app: AppEntry, searchQuery: String? = nil) {
+        if let searchQuery {
+            ranking.record(itemKey: app.preferenceKey, query: searchQuery)
+        }
+        paletteCoordinator.hidePalette(restoreFocus: false)
+        guard let url = WebSearchQuery.url(for: typed, template: core.settings.webSearchTemplate)
+        else {
+            Task { await reportUnusableTemplate() }
+            return
+        }
+        AppLauncher.open(url, in: app.url)
+    }
+
+    /// Only reachable through a custom template the pane already warns about, so it offers the way
+    /// back rather than dead-ending on a search that can't run.
+    private func reportUnusableTemplate() async {
+        guard
+            await core.reportFailure(
+                title: "Couldn’t Search the Web",
+                message: "The custom search template needs a \(WebSearchQuery.placeholder) for the "
+                    + "typed text to land in.",
+                symbol: "magnifyingglass", recovery: "Open Settings…")
+        else { return }
+        settingsCoordinator.showSettings(tab: .applications)
+    }
+
     private func runCommand(_ entry: AppEntry) {
         switch CommandCatalog.command(for: entry) {
         case .calculatorHistory:

@@ -237,6 +237,25 @@ final class AppSettings {
         }
     }
 
+    /// Whether Tab on a browser row opens a web-search field beside the launcher's own.
+    var webSearchEnabled: Bool {
+        didSet { defaults.set(webSearchEnabled, forKey: Key.webSearchEnabled.rawValue) }
+    }
+
+    var webSearchEngine: WebSearchEngine {
+        didSet { defaults.set(webSearchEngine.rawValue, forKey: Key.webSearchEngine.rawValue) }
+    }
+
+    /// Only read when the engine is `.custom`; kept when it isn't, so switching back restores it.
+    var webSearchCustomTemplate: String {
+        didSet {
+            defaults.set(webSearchCustomTemplate, forKey: Key.webSearchCustomTemplate.rawValue)
+        }
+    }
+
+    /// What a launcher web search expands, resolved once so no caller repeats the custom fallback.
+    var webSearchTemplate: String { webSearchEngine.template ?? webSearchCustomTemplate }
+
     init() {
         // `integer(forKey:)` returns 0 when unset, which no case matches.
         clipboardRetention =
@@ -324,5 +343,11 @@ final class AppSettings {
         quicklinkConfirmsBeforeDelete =
             defaults.object(forKey: Key.quicklinkConfirmsBeforeDelete.rawValue) == nil
             || defaults.bool(forKey: Key.quicklinkConfirmsBeforeDelete.rawValue)
+        webSearchEnabled = defaults.bool(forKey: Key.webSearchEnabled.rawValue)
+        webSearchEngine =
+            defaults.string(forKey: Key.webSearchEngine.rawValue).flatMap(WebSearchEngine.init)
+            ?? .google
+        webSearchCustomTemplate =
+            defaults.string(forKey: Key.webSearchCustomTemplate.rawValue) ?? ""
     }
 }

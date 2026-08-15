@@ -77,6 +77,8 @@ struct AppEntry: Identifiable, Hashable, Sendable {
     var alternateNames: [String] = []
     /// `CFBundleExecutable`, matched literally as a last resort. Applications only.
     var executableName: String?
+    /// Declares `http`/`https` in `CFBundleURLTypes` — what the system means by a browser.
+    var handlesWebLinks = false
     /// Set by the feature that produced the entry when its glyph isn't derivable from `kind`.
     var iconOverride: EntryIcon?
     /// A per-entry label where the kind's own reads too flat — an extension's title, say.
@@ -368,7 +370,8 @@ final class AppIndex {
                         // A binary named after the app adds nothing the display name lacks.
                         executableName: executable.flatMap {
                             $0.caseInsensitiveCompare(name) == .orderedSame ? nil : $0
-                        }))
+                        },
+                        handlesWebLinks: handlesWebLinks(bundle)))
             }
             // Slice order is section order, so the flat selection maps 1:1 onto rows.
             let apps = result.sorted {
@@ -379,6 +382,20 @@ final class AppIndex {
             return (apps + panes, cache, panesCache)
         }
     }
+
+    /// Read from the bundle, not Launch Services: the scan is already off-main holding the
+    /// Info.plist, and asking LS per app would be a synchronous main-thread round trip.
+    nonisolated private static func handlesWebLinks(_ bundle: Bundle?) -> Bool {
+        let types = bundle?.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]]
+        return types?.contains { type in
+            // `None` is a bundle saying it parses the scheme but must not be offered as a handler.
+            guard (type["LSHandlerRank"] as? String) != "None" else { return false }
+            let schemes = type["CFBundleURLSchemes"] as? [String] ?? []
+            return schemes.contains { webSchemes.contains($0.lowercased()) }
+        } ?? false
+    }
+
+    nonisolated private static let webSchemes: Set<String> = ["http", "https"]
 
     private func publishEntries() {
         // Each slice arrives in its own display order; the slice order is the section order.
