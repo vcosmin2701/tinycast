@@ -6,6 +6,8 @@ struct ApplicationsSettingsView: View {
             // Scopes first: they decide what gets indexed, so they read before the results.
             SearchScopesSection()
 
+            WebSearchSection()
+
             LauncherItemsSection(
                 kind: .application,
                 header: "Applications",

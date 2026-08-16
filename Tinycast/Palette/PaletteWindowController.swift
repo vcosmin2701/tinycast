@@ -218,8 +218,13 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         panel.paletteState = core.palette
         // Backspace in an empty search backs out of a sub-screen to a fresh root.
         panel.onBareBackspace = { [weak self] in
-            guard let core = self?.core, core.palette.mode != .launcher, core.palette.query.isEmpty
-            else { return false }
+            guard let core = self?.core else { return false }
+            // An empty header chip steps back to the search field before the mode rule applies.
+            if core.palette.headerFieldIsEmpty {
+                core.palette.noteHeaderRetreat()
+                return true
+            }
+            guard core.palette.mode != .launcher, core.palette.query.isEmpty else { return false }
             // The argument form steps back through the answers first, one key per field.
             if core.palette.mode == .quicklinkArguments,
                 let previous = core.quicklinkArguments.retreat()

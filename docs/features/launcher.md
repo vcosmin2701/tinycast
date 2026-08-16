@@ -212,6 +212,49 @@ paths; see the command in `development.md`.
 Launcher icons use a persistent 32 MB cost-capped `NSCache`. Fitted file-row icons use a separate
 transient 8 MB cache that is purged when its palette list disappears (`IconCache`).
 
+## Search the web from an app row
+
+Type an app name, press **Tab**, type what to search for, press **↵** — the search opens in *that*
+browser rather than in the default one. It is the launcher's answer to "I want this query, in this
+browser", which otherwise costs a quicklink per browser.
+
+The feature ships **off**, in **Settings → Applications → Web Search**, because it is the one thing
+here that changes what an existing key does: with it on, Tab on a browser row grows a chip instead of
+flipping to the clipboard. Off is fully off — no chip, and Tab behaves as it always did.
+
+The chip is the same `PaletteHeaderAccessory` an extension command's inline arguments use, so Tab,
+focus and ↵ behave identically and the palette learns nothing new; `LauncherScreen.headerAccessory`
+offers the extension's strip first and falls back to `AppSearchAccessory`. Three rules keep it out of
+the way of the launcher it sits in:
+
+- **A browser is an app declaring `http` or `https` in `CFBundleURLTypes`** — the system's own
+  definition, so every browser qualifies the moment it is indexed and there is no list to keep
+  current. It is read from the Info.plist the off-main scan is already holding rather than by asking
+  Launch Services per app, and a URL type marked `LSHandlerRank = None` is skipped, since that is a
+  bundle saying it parses the scheme but must not be offered as a handler. `AppEntry.handlesWebLinks`
+  carries the answer. A terminal that registers as an `https` handler therefore qualifies too — that
+  is the definition being honest, not a bug.
+- **The chip only appears once something has been typed.** With an empty query the search field has to
+  keep its full width and its own prompt, and Tab still flips to the clipboard.
+- **An empty chip never blocks ↵**, unlike a required extension argument: the row still opens the app.
+  What was typed is what decides, so the same row does both.
+- **Backspace on an empty chip clears the whole search line**, chip and query together, rather than
+  handing focus back to a query the user has already finished with. The field editor swallows that
+  key, so it is taken in `PalettePanel.sendEvent` against `PaletteState.headerFieldIsEmpty` and
+  returned as `headerRetreatToken` — the same route ⌘. already takes.
+
+`WebSearchQuery` (pure, `web-search-test`) turns the typed text into the URL. Values are
+percent-encoded to RFC 3986 *unreserved* only, so a `&`, a `+` or a `/` in a query can never
+restructure the template. Text starting with an explicit `http://` or `https://` opens as typed
+instead — a bare `node.js` is far likelier to be a search than a host, so only a real scheme counts as
+a destination, and a link that doesn't parse falls back to being searched for.
+
+The engine lives in **Settings → Applications → Web Search**: nine built-ins plus a custom template,
+which must carry `{query}` for the pane to accept it. `AppSettings.webSearchTemplate` resolves the
+choice once, so no caller repeats the custom fallback. `LauncherCoordinator.searchWeb` is the one
+funnel, and `AppLauncher.open(_:in:)` hands the URL to the chosen bundle rather than the default
+handler.
+
 ## Reveal in Finder
 
 Application and System Settings results expose **Show in Finder** in their ⌘K Actions menu and on

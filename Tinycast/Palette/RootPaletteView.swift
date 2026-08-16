@@ -256,6 +256,13 @@ struct RootPaletteView: View {
         }
         // ⌘. arrives as a token rather than a key press. See `PaletteState.pinChordToken`.
         .onChange(of: vm.pinChordToken) { pinSelection() }
+        // Backspace on an empty chip arrives the same way, and clears the whole line with it.
+        .onChange(of: vm.headerRetreatToken) {
+            vm.query = ""
+            vm.selection = 0
+            argumentFocused = nil
+            searchFocused = true
+        }
         // One optional makes "exactly one menu" structural; this only mirrors it for the panel.
         .onChange(of: openMenu) {
             vm.menuOpen = menuOpen
@@ -430,7 +437,9 @@ struct RootPaletteView: View {
     private func endDrag() { core.paletteCoordinator.endPaletteDrag() }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 0) {
+        // Resolved once: building it rebuilds the selected row's accessory view with it.
+        let accessory = headerAccessory
+        return HStack(alignment: .center, spacing: 0) {
             // Matches the list rows and section headers' own indent below.
             headerGutter(width: Theme.Spacing.md * 2)
             // Sub-screens of the root search, so their header icon is a back chevron.
@@ -455,8 +464,9 @@ struct RootPaletteView: View {
             // One structural position, always: putting the field inside a branch tears down its
             // field editor when the branch flips, which drops first responder mid-navigation.
             // The width shrinks to the typed text so argument fields sit right after it, as in Raycast.
-            searchField.frame(width: headerAccessory.map(searchFieldWidth))
-            if let accessory = headerAccessory {
+            searchField.frame(width: accessory.map(searchFieldWidth))
+                .opacity(accessory?.hidesQuery == true ? 0 : 1)
+            if let accessory {
                 accessory.view
                 Spacer(minLength: 0)
             }
@@ -500,6 +510,8 @@ struct RootPaletteView: View {
     /// Width the search field shrinks to when an accessory sits beside it: the typed text's own
     /// width, floored so the caret always has room and capped so the strip can't be pushed off-screen.
     private func searchFieldWidth(for accessory: PaletteHeaderAccessory) -> CGFloat {
+        // Collapsed rather than removed: the field keeps its position, and with it first responder.
+        if accessory.hidesQuery { return 0 }
         let font = Theme.Typography.searchFieldNSFont
         let typed = (vm.query as NSString).size(withAttributes: [.font: font]).width
         let chrome = Theme.Size.headerIconSlot + Theme.Spacing.md * 4

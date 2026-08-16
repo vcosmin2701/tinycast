@@ -29,6 +29,10 @@ struct SettingsBackup: Codable {
         var openOnCursorScreen: Bool?
         // Safe to carry: it grants no permission class, just repositions the window.
         var paletteDraggable: Bool?
+        // Safe to carry: a search template opens links the launcher could already open.
+        var webSearchEnabled: Bool?
+        var webSearchEngine: String?
+        var webSearchCustomTemplate: String?
         var fileSearchEnabled: Bool?
         var fileSearchScopes: [String]?
         var fileSearchIgnorePatterns: [String]?
@@ -98,6 +102,9 @@ extension SettingsBackup {
             searchScopes: s.searchScopes,
             openOnCursorScreen: s.openOnCursorScreen,
             paletteDraggable: s.paletteDraggable,
+            webSearchEnabled: s.webSearchEnabled,
+            webSearchEngine: s.webSearchEngine.rawValue,
+            webSearchCustomTemplate: s.webSearchCustomTemplate,
             fileSearchEnabled: s.fileSearchEnabled,
             fileSearchScopes: s.fileSearchScopes,
             fileSearchIgnorePatterns: s.fileSearchIgnorePatterns,
@@ -238,6 +245,18 @@ extension SettingsBackup {
         }
         if let flag = s.paletteDraggable {
             settings.paletteDraggable = flag
+            count += 1
+        }
+        if let flag = s.webSearchEnabled {
+            settings.webSearchEnabled = flag
+            count += 1
+        }
+        if let raw = s.webSearchEngine, let engine = WebSearchEngine(rawValue: raw) {
+            settings.webSearchEngine = engine
+            count += 1
+        }
+        if let template = s.webSearchCustomTemplate {
+            settings.webSearchCustomTemplate = template
             count += 1
         }
         // Writing through AppSettings is enough; AppCore's sinks re-project the rest.

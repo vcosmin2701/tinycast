@@ -82,6 +82,18 @@ struct LauncherScreen: PaletteScreen {
             entry: entry, coordinator: core.extensionCoordinator,
             values: { name in headerFieldBinding(entry: entry, name: name) },
             focus: focus, onSubmit: { activate(at: selection) })
+            ?? AppSearchAccessory.make(
+                entry: entry, query: vm.query, settings: core.settings,
+                value: headerFieldBinding(entry: entry, name: AppSearchAccessory.field),
+                focus: focus, onSubmit: { activate(at: selection) })
+    }
+
+    /// What was typed into the web-search chip, and only while that row still offers one.
+    private func webSearchText(for entry: AppEntry) -> String {
+        guard AppSearchAccessory.offers(entry: entry, query: vm.query, settings: core.settings)
+        else { return "" }
+        let key = PaletteState.argumentKey(entry.id, AppSearchAccessory.field)
+        return vm.commandArguments[key]?.trimmingCharacters(in: .whitespaces) ?? ""
     }
 
     private func headerFieldBinding(entry: AppEntry, name: String) -> Binding<String> {
@@ -137,6 +149,12 @@ struct LauncherScreen: PaletteScreen {
         // Error cards no-op — copyCalculatorResult only acts on value payloads.
         case .calc(let result): core.calculatorCoordinator.copyCalculatorResult(result)
         case .entry(let app):
+            // A filled search chip is the action; an empty one leaves the row opening the app.
+            let typed = webSearchText(for: app)
+            guard typed.isEmpty else {
+                core.launcherCoordinator.searchWeb(typed, in: app, searchQuery: vm.query)
+                return
+            }
             core.launcherCoordinator.launch(
                 app, searchQuery: vm.query, arguments: argumentValues(for: app))
         case nil: break

@@ -219,6 +219,19 @@ caches, TCC grants and login item, so this cannot disturb an installed copy.
 - An app removed since the last open drops out after a reopen
 - Learned ranking still surfaces your habitual result for a short query
 
+### Web search
+
+Off by default, so the first line is the one that guards every other launcher user.
+
+- With Settings ▸ Applications ▸ Web Search **off**, no browser row grows a chip and Tab still
+  flips to the clipboard
+- With it on, typing a browser's name and pressing Tab grows a chip carrying that browser's icon;
+  the typed app name collapses behind it and comes back when the line is cleared
+- ↵ opens the search in **that** browser, not the default one; a second browser searches in itself
+- ↵ on an empty chip still opens the app, and a non-browser row is unaffected
+- Backspace inside the chip deletes characters; on an empty chip it clears the whole search line
+- Typing a full `https://…` into the chip opens that link as typed rather than searching for it
+
 ### Hotkeys
 
 - The palette, clipboard and emoji shortcuts fire; a per-app shortcut still toggles that app
